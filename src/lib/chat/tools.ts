@@ -90,8 +90,23 @@ export interface ToolResult {
 export async function runTool(name: string, args: Record<string, unknown>): Promise<ToolResult> {
   switch (name) {
     case "search_recipes": {
-      const recipes = await getRecipes({ q: String(args.query ?? "") });
+      const query = String(args.query ?? "");
+      let recipes = await getRecipes({ q: query });
+
+      // No exact match? Never leave the screen empty — surface a few popular recipes as
+      // suggestion cards so the assistant always has something tappable to point at.
+      let fallback = false;
+      if (recipes.length === 0) {
+        const all = await getRecipes();
+        recipes = all.slice(0, 3);
+        fallback = recipes.length > 0;
+      }
+
       const content = JSON.stringify({
+        query,
+        no_exact_match: fallback,
+        // When no_exact_match is true, these are popular suggestions shown as cards (NOT a
+        // real match for the query). Own the gap warmly and point the customer at them.
         count: recipes.length,
         recipes: recipes.map((r) => ({
           id: r.id,
