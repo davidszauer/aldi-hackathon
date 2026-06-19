@@ -79,40 +79,42 @@ boxes as you go. Workstreams 1–2 unblock everything else, so grab those first.
 
 ---
 
-## 3. Chatbot (OpenAI function calling)
+## 3. Chatbot (OpenAI function calling) ✅ DONE (food → recipe → shop)
 
-> Conversation flow: **say what you like → pick a recipe → resolve products → get the route**.
+> Conversation flow: **say what you like → pick a recipe → resolve products into a basket**.
+> Route step deferred (out of scope per demo decision — see task 4).
 
-- [ ] Create server route handler `POST /api/chat` (streams or returns assistant turns; keeps `OPENAI_API_KEY` server-side) _(owner: )_
-- [ ] Write the system prompt (persona = ALDI shopping assistant; explains the 3-step flow; instructs it to ask portions & offer to skip pantry staples) _(owner: )_
-- [ ] Define OpenAI **tools** mapping to the API client: _(owner: )_
-  - [ ] `search_recipes(query)` → `getRecipes`
-  - [ ] `get_recipe(recipe_id, portions, exclude_pantry)` → `getRecipe`
-  - [ ] `list_stores()` → `getStores`
-  - [ ] `plan_route(store_id, recipe_id, exclude_pantry)` → `getRoutePlan`
-- [ ] Implement the tool-dispatch loop (model requests tool → we call API client → feed result back → continue) _(owner: )_
-- [ ] **Step 1 — intent:** user names a dish/ingredient → bot returns matching recipe options _(owner: )_
-- [ ] **Step 2 — recipe pick:** resolve chosen recipe's ingredients to product options _(owner: )_
-- [ ] **Step 3 — route:** for the selected store, return the route plan _(owner: )_
-- [ ] **Smart question — portions:** bot asks how many portions; pass `portions` to scale amounts _(owner: )_
-- [ ] **Smart question — pantry:** bot offers to skip staples (salt, oil, sugar…); pass `exclude_pantry=true` _(owner: )_
-- [ ] Handle no-match / ambiguous input gracefully ("did you mean…") _(owner: )_
-- [ ] Conversation state: track selected recipe, portions, store across turns _(owner: )_
+- [x] Create server route handler `POST /api/chat` (returns assistant turns + artifacts; keeps `OPENAI_API_KEY` server-side) — `src/app/api/chat/route.ts`
+- [x] Write the system prompt (ALDI shopping assistant; intent → pick → interactive basket; cards do the heavy lifting) — `src/lib/chat/systemPrompt.ts`
+- [x] Define OpenAI **tools** mapping to the API client — `src/lib/chat/tools.ts`
+  - [x] `search_recipes(query)` → `getRecipes`
+  - [x] `get_recipe(recipe_id, portions, exclude_pantry)` → `getRecipe`
+  - [ ] `list_stores()` / `plan_route()` — dropped from chat (route out of scope; store is global app context)
+- [x] Implement the tool-dispatch loop (model requests tool → API client → feed result back → continue)
+- [x] **Step 1 — intent:** user names a dish/ingredient → bot returns matching recipe options (rendered as cards)
+- [x] **Step 2 — recipe pick:** tapping a card opens the interactive basket (ingredients → ALDI products)
+- [x] **Smart question — portions:** basket has a live portions stepper (`portions` rescales amounts/packs)
+- [x] **Smart question — pantry:** "Skip pantry staples" toggle (`exclude_pantry=true`), on by default
+- [x] Handle no-match gracefully (prompt says so; empty search returns a friendly nudge)
+- [x] Conversation state: text history sent to the model each turn; selected recipe tracked UI-side
 
 ---
 
-## 4. Frontend UI
+## 4. Frontend UI ✅ DONE (food → recipe → shop; route deferred)
 
-- [ ] Chat interface: message list, input box, streaming/typing indicator _(owner: )_
-- [ ] Render **recipe option cards** (name, cuisine, prep time, tags, portions) _(owner: )_
-- [ ] Render **ingredient → product picker**: each ingredient shows its size/price options; user can switch option (cheapest vs. max-profit) _(owner: )_
-- [ ] **Store selector** (5 stores: Vienna, Budapest, Munich, Berlin, Zurich) _(owner: )_
-- [ ] **Store grid visualization** (9×9): draw aisles/categories, entrance, checkout _(owner: )_
-- [ ] **Route overlay** on the grid: draw `path[]`, number the `stops[]`, show "Pick up X" labels _(owner: )_
-- [ ] **Basket / cart summary**: line items, `line_price`, basket total, total steps _(owner: )_
-- [ ] Checkout summary screen (final basket + route ends at checkout) _(owner: )_
-- [ ] Responsive layout (works on the demo screen / projector) _(owner: )_
-- [ ] Empty / loading / error states for each panel _(owner: )_
+> Built as a chatbot, not a static wizard. Cards render inline in the conversation;
+> basket controls re-fetch the ALDI API directly (CORS-open) for instant tweaks, no LLM lag.
+> Components in `src/components/chat/`: `ChatScreen`, `RecipeOptions`, `ShopCard`.
+
+- [x] Chat interface: message list, input box, typing indicator — `ChatScreen.tsx`
+- [x] Render **recipe option cards** (name, cuisine, prep time, tags, portions) — `RecipeOptions.tsx`
+- [x] Render **basket**: ingredient → ALDI product, size/options count, `line_price`; global **cheapest ↔ max-profit** toggle — `ShopCard.tsx`
+- [x] **Store** shown as shopping context (global `StoreSwitcher` in the chat header)
+- [ ] **Store grid / route overlay** — out of scope for this pass (demo stops at the basket)
+- [x] **Basket summary**: line items + **Cheapest basket** total and **Profit-optimised** total with **ALDI margin €X**
+- [ ] Checkout summary screen — deferred with the route
+- [x] Responsive layout (mobile-first inside `PhoneFrame`; framed device on ≥640px)
+- [x] Loading (skeleton rows) + error states in the basket card
 
 ---
 
@@ -120,10 +122,10 @@ boxes as you go. Workstreams 1–2 unblock everything else, so grab those first.
 
 > Worth extra points. The recipe endpoint already does the heavy lifting.
 
-- [ ] **Maximize ALDI margin:** default basket uses each ingredient's `max_profit_option_id`; surface total `line_margin` ("ALDI margin: €X") _(owner: )_
-- [ ] Let user toggle **cheapest vs. max-profit** basket and show the price/margin delta _(owner: )_
-- [ ] **Portion scaling** wired end-to-end (`?portions=N` changes `scaled_amount` & `packs_needed`) _(owner: )_
-- [ ] **Skip pantry staples** toggle (`exclude_pantry=true`) reflected in basket + route _(owner: )_
+- [x] **Maximize ALDI margin:** profit-optimised mode uses each ingredient's `max_profit_option_id`; basket surfaces total `line_margin` ("ALDI margin €X")
+- [x] Let user toggle **cheapest vs. max-profit** basket — both totals shown side by side, tappable to switch the line items
+- [x] **Portion scaling** wired end-to-end (live stepper → `?portions=N` changes `scaled_amount` & `packs_needed`)
+- [x] **Skip pantry staples** toggle (`exclude_pantry=true`) reflected in the basket (on by default)
 - [ ] (Stretch) "Highest-margin products" insight panel using `GET /api/products?sort=margin` _(owner: )_
 
 ---

@@ -1,6 +1,6 @@
 // Shared chat types used by both the /api/chat route and the UI.
 
-import type { Recipe, RecipeDetail, RoutePlan, Store, StoreGrid } from "@/lib/api";
+import type { Recipe, RecipeDetail } from "@/lib/api";
 
 /** A single turn shown in the UI. */
 export interface ChatMessage {
@@ -14,8 +14,6 @@ export interface ChatMessage {
 export interface ChatArtifacts {
   recipes?: Recipe[];
   recipe?: RecipeDetail;
-  stores?: Store[];
-  route?: { plan: RoutePlan; grid: StoreGrid };
 }
 
 export interface ChatRequest {
