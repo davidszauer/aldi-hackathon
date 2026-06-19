@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Minus, Plus, ShoppingCartSimple, Storefront, Trophy } from "@phosphor-icons/react";
+import { Check, Minus, Plus, ShoppingCartSimple, Storefront, Trophy } from "@phosphor-icons/react";
 import type { ProductOption, RecipeDetail, ResolvedIngredient } from "@/lib/api";
 import { fetchRecipe } from "@/lib/api/browser";
 import { useStore } from "@/components/StoreProvider";
+import { LocationCheckSheet } from "./LocationCheckSheet";
 
 export type ShopSeed = {
   recipeId: number;
@@ -30,6 +31,8 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
   const [portions, setPortions] = useState(seed.portions ?? seed.basePortions);
   const [excludePantry, setExcludePantry] = useState(seed.excludePantry ?? true);
   const [profitMode, setProfitMode] = useState(false);
+  const [checkOpen, setCheckOpen] = useState(false);
+  const [confirmedStoreId, setConfirmedStoreId] = useState<number | null>(null);
   const [detail, setDetail] = useState<RecipeDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,12 +61,20 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
   const items = detail?.ingredients.filter((i) => i.include_in_shopping_list) ?? [];
   let cheapestTotal = 0;
   let profitTotal = 0;
-  let profitMargin = 0;
   for (const ing of items) {
     cheapestTotal += optionById(ing, ing.cheapest_option_id).line_price;
-    const profitOpt = optionById(ing, ing.max_profit_option_id);
-    profitTotal += profitOpt.line_price;
-    profitMargin += profitOpt.line_margin;
+    profitTotal += optionById(ing, ing.max_profit_option_id).line_price;
+  }
+
+  // Location is "confirmed" only while the selected store still matches the one
+  // the user confirmed — switching stores in the header re-arms the check.
+  const confirmed = confirmedStoreId === store.id;
+
+  // Picking Regular/Premium is the commit action: set the pricing, then confirm
+  // the user is actually at the store before they head in to shop.
+  function commit(premium: boolean) {
+    setProfitMode(premium);
+    if (!confirmed) setCheckOpen(true);
   }
 
   return (
@@ -120,7 +131,7 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
         <Toggle
           checked={profitMode}
           onChange={setProfitMode}
-          label="ALDI profit-optimised picks"
+          label="Premium ingredients"
           trophy
         />
       </div>
@@ -165,19 +176,19 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
       <div className="space-y-2 px-4 pt-3 pb-4">
         <button
           type="button"
-          onClick={() => setProfitMode(false)}
+          onClick={() => commit(false)}
           className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-colors ${
             profitMode ? "bg-app-field" : "bg-aldi-blue/8 ring-1 ring-aldi-blue/30 ring-inset"
           }`}
         >
-          <span className="text-aldi-navy text-[13.5px] font-bold">Cheapest basket</span>
+          <span className="text-aldi-navy text-[13.5px] font-bold">Regular ingredients</span>
           <span className="text-aldi-navy text-[15px] font-extrabold tabular-nums">
             {euro(cheapestTotal)}
           </span>
         </button>
         <button
           type="button"
-          onClick={() => setProfitMode(true)}
+          onClick={() => commit(true)}
           className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-colors ${
             profitMode
               ? "bg-aldi-orange/10 ring-1 ring-aldi-orange/40 ring-inset"
@@ -186,18 +197,32 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
         >
           <span className="text-aldi-navy flex items-center gap-1.5 text-[13.5px] font-bold">
             <Trophy size={15} weight="fill" className="text-aldi-orange" />
-            Profit-optimised
+            Premium ingredients
           </span>
           <span className="flex items-baseline gap-2">
-            <span className="text-aldi-orange text-[12px] font-bold tabular-nums">
-              margin {euro(profitMargin)}
-            </span>
             <span className="text-aldi-navy text-[15px] font-extrabold tabular-nums">
               {euro(profitTotal)}
             </span>
           </span>
         </button>
+
+        {confirmed && (
+          <p className="text-aldi-blue flex items-center justify-center gap-1.5 pt-1 text-[12.5px] font-bold">
+            <Check size={14} weight="bold" />
+            Ready to shop at {store.city}
+          </p>
+        )}
       </div>
+
+      <LocationCheckSheet
+        open={checkOpen}
+        premium={profitMode}
+        onClose={() => setCheckOpen(false)}
+        onConfirm={(id) => {
+          setConfirmedStoreId(id);
+          setCheckOpen(false);
+        }}
+      />
     </div>
   );
 }

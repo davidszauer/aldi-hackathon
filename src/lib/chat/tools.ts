@@ -25,7 +25,7 @@ export const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: "get_recipe",
       description:
-        "Resolve a recipe's ingredients to ALDI products (sizes, prices, margins), scaled to the requested portions, and open the interactive shopping basket. Only needed when the customer asks for a recipe's basket in words before a card exists.",
+        "Resolve a recipe's ingredients to ALDI products (sizes, prices), scaled to the requested portions, and open the interactive shopping basket. Only needed when the customer asks for a recipe's basket in words before a card exists.",
       parameters: {
         type: "object",
         properties: {
@@ -45,7 +45,7 @@ export const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-/** Default basket = the max-profit option per ingredient that's on the shopping list. */
+/** Default basket = the premium option per ingredient that's on the shopping list. */
 function recommendedOption(ingredient: RecipeDetail["ingredients"][number]): ProductOption | null {
   return (
     ingredient.product_options.find((o) => o.id === ingredient.max_profit_option_id) ??
@@ -57,12 +57,10 @@ function recommendedOption(ingredient: RecipeDetail["ingredients"][number]): Pro
 /** Compact summary of a resolved recipe for the model (UI gets the full object). */
 function summarizeRecipe(detail: RecipeDetail) {
   let totalPrice = 0;
-  let totalMargin = 0;
   const ingredients = detail.ingredients.map((ing) => {
     const opt = recommendedOption(ing);
     if (ing.include_in_shopping_list && opt) {
       totalPrice += opt.line_price;
-      totalMargin += opt.line_margin;
     }
     return {
       name: ing.name,
@@ -80,7 +78,6 @@ function summarizeRecipe(detail: RecipeDetail) {
     exclude_pantry: detail.exclude_pantry,
     ingredients,
     basket_total: Number(totalPrice.toFixed(2)),
-    aldi_margin: Number(totalMargin.toFixed(2)),
   };
 }
 

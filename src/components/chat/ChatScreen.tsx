@@ -9,23 +9,23 @@ import { RecipeOptions } from "./RecipeOptions";
 import { ShopCard, type ShopSeed } from "./ShopCard";
 
 type UiMessage = {
-  id: number;
+  id: string;
   role: "user" | "assistant";
   content: string;
   recipes?: Recipe[];
   shop?: ShopSeed;
 };
 
+const newId = () => crypto.randomUUID();
+
 const SUGGESTIONS = ["I fancy a salad", "Something with chicken", "Quick pasta dinner"];
 
 const GREETING: UiMessage = {
-  id: 0,
+  id: "greeting",
   role: "assistant",
   content:
-    "Hi! Tell me a dish you fancy and I'll find ALDI recipes, fill the basket, and keep it cheap (or boost ALDI's margin if you like 🏆).",
+    "Hi! Tell me a dish you fancy and I'll find ALDI recipes, fill the basket, and keep it cheap (or upgrade to premium ingredients if you like 🏆).",
 };
-
-let nextId = 1;
 
 export function ChatScreen() {
   const [messages, setMessages] = useState<UiMessage[]>([GREETING]);
@@ -44,7 +44,7 @@ export function ChatScreen() {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
 
-    const userMsg: UiMessage = { id: nextId++, role: "user", content: trimmed };
+    const userMsg: UiMessage = { id: newId(), role: "user", content: trimmed };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput("");
@@ -66,7 +66,7 @@ export function ChatScreen() {
 
       const { message } = data;
       const reply: UiMessage = {
-        id: nextId++,
+        id: newId(),
         role: "assistant",
         content: message.content,
         recipes: message.artifacts?.recipes,
@@ -87,7 +87,7 @@ export function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
-          id: nextId++,
+          id: newId(),
           role: "assistant",
           content: "Sorry, I lost that one. Mind trying again?",
         },
@@ -102,9 +102,9 @@ export function ChatScreen() {
     setMessages((prev) => [
       ...prev,
       {
-        id: nextId++,
+        id: newId(),
         role: "assistant",
-        content: `Here's your ALDI basket for ${recipe.name}. Tweak the portions, skip the staples, or flip on ALDI's profit-optimised picks.`,
+        content: `Here's your ALDI basket for ${recipe.name}. Tweak the portions, skip the staples, or upgrade to premium ingredients.`,
         shop: { recipeId: recipe.id, name: recipe.name, basePortions: recipe.base_portions },
       },
     ]);
