@@ -1,11 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Minus, Plus, ShoppingCartSimple, Storefront, Trophy } from "@phosphor-icons/react";
-import type { ProductOption, RecipeDetail, ResolvedIngredient } from "@/lib/api";
-import { fetchRecipe } from "@/lib/api/browser";
+import {
+  Check,
+  MapTrifold,
+  Minus,
+  Plus,
+  ShoppingCartSimple,
+  Storefront,
+  Trophy,
+} from "@phosphor-icons/react";
+import type {
+  ProductOption,
+  RecipeDetail,
+  ResolvedIngredient,
+  RoutePlan,
+  StoreGrid,
+} from "@/lib/api";
+import { fetchRecipe, fetchRoutePlan, fetchStoreGrid } from "@/lib/api/browser";
 import { useStore } from "@/components/StoreProvider";
 import { LocationCheckSheet } from "./LocationCheckSheet";
+import { RouteMap } from "./RouteMap";
+
+const MAP_FIT = 300; // px the route map is scaled to inside the shop card
 
 export type ShopSeed = {
   recipeId: number;
@@ -70,6 +87,38 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
   // the user confirmed — switching stores in the header re-arms the check.
   const confirmed = confirmedStoreId === store.id;
 
+  // Once the store is confirmed, plan the in-store route for that store. A
+  // request counter drops stale responses (store / pantry can change).
+  const [grid, setGrid] = useState<StoreGrid | null>(null);
+  const [route, setRoute] = useState<RoutePlan | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const routeReqId = useRef(0);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- syncing route state with the confirmed store; async results land in callbacks below */
+    if (!confirmed) {
+      setGrid(null);
+      setRoute(null);
+      return;
+    }
+    const id = ++routeReqId.current;
+    setRouteError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    Promise.all([
+      fetchStoreGrid(store.id),
+      fetchRoutePlan(store.id, { recipeId: seed.recipeId, excludePantry }),
+    ])
+      .then(([g, r]) => {
+        if (id !== routeReqId.current) return;
+        setGrid(g);
+        setRoute(r);
+      })
+      .catch((e: unknown) => {
+        if (id === routeReqId.current)
+          setRouteError(e instanceof Error ? e.message : "Could not map the route");
+      });
+  }, [confirmed, store.id, seed.recipeId, excludePantry]);
+
   // Picking Regular/Premium is the commit action: set the pricing, then confirm
   // the user is actually at the store before they head in to shop.
   function commit(premium: boolean) {
@@ -128,12 +177,7 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
           label="Skip pantry staples"
           hint="salt, oil, pepper…"
         />
-        <Toggle
-          checked={profitMode}
-          onChange={setProfitMode}
-          label="Premium ingredients"
-          trophy
-        />
+        <Toggle checked={profitMode} onChange={setProfitMode} label="Premium ingredients" trophy />
       </div>
 
       {/* Basket */}
@@ -144,7 +188,10 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
       ) : (
         <ul className="divide-app-hairline divide-y px-4">
           {items.map((ing) => {
-            const opt = optionById(ing, profitMode ? ing.max_profit_option_id : ing.cheapest_option_id);
+            const opt = optionById(
+              ing,
+              profitMode ? ing.max_profit_option_id : ing.cheapest_option_id,
+            );
             return (
               <li key={ing.ingredient_key} className="flex items-start gap-3 py-3">
                 <div className="min-w-0 flex-1">
@@ -178,7 +225,7 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
           type="button"
           onClick={() => commit(false)}
           className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-colors ${
-            profitMode ? "bg-app-field" : "bg-aldi-blue/8 ring-1 ring-aldi-blue/30 ring-inset"
+            profitMode ? "bg-app-field" : "bg-aldi-blue/8 ring-aldi-blue/30 ring-1 ring-inset"
           }`}
         >
           <span className="text-aldi-navy text-[13.5px] font-bold">Regular ingredients</span>
@@ -190,9 +237,7 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
           type="button"
           onClick={() => commit(true)}
           className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition-colors ${
-            profitMode
-              ? "bg-aldi-orange/10 ring-1 ring-aldi-orange/40 ring-inset"
-              : "bg-app-field"
+            profitMode ? "bg-aldi-orange/10 ring-aldi-orange/40 ring-1 ring-inset" : "bg-app-field"
           }`}
         >
           <span className="text-aldi-navy flex items-center gap-1.5 text-[13.5px] font-bold">
@@ -213,6 +258,33 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
           </p>
         )}
       </div>
+
+      {/* In-store route map — appears once the user confirms their store */}
+      {confirmed && (
+        <div className="border-app-hairline border-t px-4 py-4">
+          <div className="mb-3 flex items-center gap-2">
+            <MapTrifold size={18} weight="fill" className="text-aldi-blue" />
+            <div className="min-w-0">
+              <p className="text-aldi-navy text-[14px] leading-tight font-bold">
+                Your in-store route
+              </p>
+              <p className="text-app-muted text-[12px] font-medium">
+                {route
+                  ? `${route.total_steps} steps · ${route.stops.length - 2} pickups`
+                  : "Mapping the shortest path…"}
+              </p>
+            </div>
+          </div>
+
+          {routeError ? (
+            <p className="text-aldi-red py-4 text-center text-[13px] font-semibold">{routeError}</p>
+          ) : grid && route ? (
+            <RouteMap grid={grid} route={route} fitWidth={MAP_FIT} />
+          ) : (
+            <div className="bg-app-field h-[280px] w-full animate-pulse rounded-xl" />
+          )}
+        </div>
+      )}
 
       <LocationCheckSheet
         open={checkOpen}
@@ -244,7 +316,7 @@ function StepBtn({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="text-aldi-blue flex h-8 w-8 items-center justify-center rounded-full transition-colors active:bg-aldi-blue/10 disabled:text-app-hairline"
+      className="text-aldi-blue active:bg-aldi-blue/10 disabled:text-app-hairline flex h-8 w-8 items-center justify-center rounded-full transition-colors"
     >
       {children}
     </button>
