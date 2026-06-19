@@ -3,10 +3,9 @@
 // directly. We use this for instant basket tweaks (portions / pantry toggle)
 // without a round-trip through the OpenAI chat route.
 
-import type { Recipe, RecipeDetail } from "./types";
+import type { Recipe, RecipeDetail, RoutePlan, StoreGrid } from "./types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_ALDI_API_BASE_URL ?? "https://hackhaton.internal.zrcn.dev";
+const BASE_URL = process.env.NEXT_PUBLIC_ALDI_API_BASE_URL ?? "https://hackhaton.internal.zrcn.dev";
 
 export async function fetchRecipes(q: string): Promise<Recipe[]> {
   const res = await fetch(`${BASE_URL}/api/recipes?q=${encodeURIComponent(q)}`);
@@ -25,4 +24,21 @@ export async function fetchRecipe(
   const res = await fetch(`${BASE_URL}/api/recipes/${id}?${params.toString()}`);
   if (!res.ok) throw new Error(`Could not load that recipe (${res.status})`);
   return (await res.json()) as RecipeDetail;
+}
+
+export async function fetchStoreGrid(storeId: number): Promise<StoreGrid> {
+  const res = await fetch(`${BASE_URL}/api/stores/${storeId}/grid`);
+  if (!res.ok) throw new Error(`Could not load the store map (${res.status})`);
+  return (await res.json()) as StoreGrid;
+}
+
+export async function fetchRoutePlan(
+  storeId: number,
+  opts: { recipeId: number; excludePantry?: boolean },
+): Promise<RoutePlan> {
+  const params = new URLSearchParams({ recipe_id: String(opts.recipeId) });
+  if (opts.excludePantry) params.set("exclude_pantry", "true");
+  const res = await fetch(`${BASE_URL}/api/stores/${storeId}/route-plan?${params.toString()}`);
+  if (!res.ok) throw new Error(`Could not plan the route (${res.status})`);
+  return (await res.json()) as RoutePlan;
 }

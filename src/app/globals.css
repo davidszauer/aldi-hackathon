@@ -33,8 +33,7 @@ body {
 
 body {
   /* Soft, quiet studio backdrop — keeps the device the hero on large screens. */
-  background:
-    radial-gradient(120% 90% at 50% -10%, #eef2f8 0%, #dde3ec 45%, #ccd3df 100%);
+  background: radial-gradient(120% 90% at 50% -10%, #eef2f8 0%, #dde3ec 45%, #ccd3df 100%);
   color: var(--color-aldi-navy);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -92,4 +91,26 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Soft pulsing spotlight on the active target shelf in the in-store route map. */
+@keyframes route-spotlight-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+.route-spotlight {
+  animation: route-spotlight-pulse 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-spotlight {
+    animation: none;
+    opacity: 0.8;
+  }
 }
