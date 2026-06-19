@@ -126,6 +126,15 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
     if (!confirmed) setCheckOpen(true);
   }
 
+  // Once the store is confirmed, bring the in-store route map into view — it
+  // renders at the bottom of the card and would otherwise pop in off-screen.
+  // Re-run when the map finishes loading in case its height shifts the layout.
+  const routeMapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!confirmed) return;
+    routeMapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [confirmed, grid, route]);
+
   return (
     <div className="border-app-hairline mt-2.5 overflow-hidden rounded-2xl border bg-white shadow-[0_12px_30px_-22px_rgba(0,30,80,0.55)]">
       {/* Header */}
@@ -261,7 +270,7 @@ export function ShopCard({ seed }: { seed: ShopSeed }) {
 
       {/* In-store route map — appears once the user confirms their store */}
       {confirmed && (
-        <div className="border-app-hairline border-t px-4 py-4">
+        <div ref={routeMapRef} className="border-app-hairline scroll-mt-4 border-t px-4 py-4">
           <div className="mb-3 flex items-center gap-2">
             <MapTrifold size={18} weight="fill" className="text-aldi-blue" />
             <div className="min-w-0">
