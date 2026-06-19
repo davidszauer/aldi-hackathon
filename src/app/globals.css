@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+  ALDI brand palette — extracted from the ALDI mobile app (app-mock.jpeg).
+  These are the brand's own colors, so the single-accent rule is satisfied by
+  the brand system itself: ALDI blue is the working accent; the sky / orange /
+  red only ever appear together inside the ALDI emblem; yellow is reserved for
+  the active nav pill.
+*/
+@theme {
+  --color-aldi-navy: #001e50; /* primary text + icons */
+  --color-aldi-blue: #00529b; /* brand blue — tabs, links, active states */
+  --color-aldi-sky: #29a9e0; /* emblem stripe */
+  --color-aldi-orange: #f39200; /* emblem stripe + "new" accent */
+  --color-aldi-red: #e2001a; /* emblem stripe */
+  --color-aldi-yellow: #ffd100; /* brand yellow */
+  --color-aldi-pill: #ffeaa6; /* soft yellow — active nav pill */
+
+  --color-app-surface: #ffffff; /* app background */
+  --color-app-field: #eef1f6; /* search field, inert surfaces */
+  --color-app-hairline: #e6e9ef; /* dividers */
+  --color-app-muted: #5b6472; /* secondary text */
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Page backdrop sits behind the phone frame on larger screens. */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #d9dde4;
+  color: var(--color-aldi-navy);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle, motivated entrance for the category grid. Honors reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tile-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .tile-in {
+    animation: tile-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* Hide scrollbars on the horizontal filter rail without losing scroll. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
