@@ -62,20 +62,20 @@ boxes as you go. Workstreams 1–2 unblock everything else, so grab those first.
 
 ---
 
-## 2. API client & types layer (unblocks 3, 4, 5)
+## 2. API client & types layer (unblocks 3, 4, 5) # Andras
 
 > Wrap the hackathon API in one typed module. Everything else imports from here.
 
-- [ ] Define TypeScript types for all responses: `Category`, `Product`, `Recipe`, `RecipeDetail`, `Ingredient`, `ProductOption`, `Store`, `Grid`, `Cell`, `RoutePlan`, `RouteStop` _(owner: )_
-- [ ] Build a typed `fetch` wrapper (base URL from env, error handling, JSON parse) _(owner: )_
-- [ ] `getCategories()` → `GET /api/categories` _(owner: )_
-- [ ] `getProducts({ category_id?, sort?, q?, ... })` → `GET /api/products` (supports `sort=margin`, `sort=price`) _(owner: )_
-- [ ] `getRecipes({ q?, tag? })` → `GET /api/recipes` (search by dish/ingredient) _(owner: )_
-- [ ] `getRecipe(id, { portions?, exclude_pantry? })` → `GET /api/recipes/{id}` (returns scaled amounts + `product_options` + `cheapest_option_id` + `max_profit_option_id` per ingredient) _(owner: )_
-- [ ] `getStores()` → `GET /api/stores` _(owner: )_
-- [ ] `getStore(id)` + `getStoreGrid(id)` → `GET /api/stores/{id}` and `/grid` _(owner: )_
-- [ ] `getRoutePlan(storeId, { recipe_id, exclude_pantry? })` → `GET /api/stores/{id}/route-plan` (returns `stops[]`, `path[]`, `total_steps`) _(owner: )_
-- [ ] (Optional) Cache catalog responses in-memory to cut latency during the demo _(owner: )_
+- [x] Define TypeScript types for all responses: `Category`, `Product`, `Recipe`, `RecipeDetail`, `Ingredient`, `ProductOption`, `Store`, `Grid`, `Cell`, `RoutePlan`, `RouteStop` _(owner: Andras)_ — `src/lib/api/types.ts`
+- [x] Build a typed `fetch` wrapper (base URL from env, error handling, JSON parse) _(owner: Andras)_ — `apiGet` in `src/lib/api/client.ts` (`AldiApiError` on non-2xx)
+- [x] `getCategories()` → `GET /api/categories` _(owner: Andras)_
+- [x] `getProducts({ category_id?, sort?, q?, ... })` → `GET /api/products` (supports `sort=margin`, `sort=price`) _(owner: Andras)_
+- [x] `getRecipes({ q?, tag? })` → `GET /api/recipes` (search by dish/ingredient) _(owner: Andras)_
+- [x] `getRecipe(id, { portions?, exclude_pantry? })` → `GET /api/recipes/{id}` (returns scaled amounts + `product_options` + `cheapest_option_id` + `max_profit_option_id` per ingredient) _(owner: Andras)_
+- [x] `getStores()` → `GET /api/stores` _(owner: Andras)_
+- [x] `getStore(id)` + `getStoreGrid(id)` → `GET /api/stores/{id}` and `/grid` _(owner: Andras)_
+- [x] `getRoutePlan(storeId, { recipe_id, exclude_pantry? })` → `GET /api/stores/{id}/route-plan` (returns `stops[]`, `path[]`, `total_steps`) _(owner: Andras)_
+- [x] (Optional) Cache catalog responses in-memory to cut latency during the demo _(owner: Andras)_ — `cache: "force-cache"` on every GET
 
 ---
 

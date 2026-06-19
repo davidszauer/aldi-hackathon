@@ -61,3 +61,7 @@ pnpm format      # prettier --write .
 - All app copy is in **English**.
 - Use **ALDI brand colors** via the Tailwind tokens (`aldi-navy`, `aldi-blue`, `aldi-pill`,
   etc.) rather than ad-hoc hex values.
+
+## 4. Communication
+
+- *Always use AskUserQuestion* when asking the user anything. Never ask questions in plain text. Always use the tool so the user can select from options rather than type free-form answers. Provide 2–4 concrete options; include "Other" implicitly (the tool adds it automatically). This applies to clarifications, design choices, ambiguities — everything.
