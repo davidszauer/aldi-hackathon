@@ -1,24 +1,18 @@
 import Link from "next/link";
-import { ArrowRight, CaretDown, ForkKnife, MapPin } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ForkKnife } from "@phosphor-icons/react/dist/ssr";
 import { AldiMark } from "@/components/AldiMark";
 import { CategoryGrid } from "@/components/CategoryGrid";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { SearchBar } from "@/components/SearchBar";
+import { StoreSwitcher } from "@/components/StoreSwitcher";
 
 export default function Home() {
   return (
     <PhoneFrame>
       <header className="flex items-center justify-between px-5 pt-2 pb-3">
         <AldiMark />
-        <button
-          type="button"
-          className="text-aldi-navy flex items-center gap-1 text-[14px] font-semibold"
-        >
-          <MapPin size={17} weight="fill" className="text-aldi-blue" />
-          Vienna Mitte
-          <CaretDown size={13} weight="bold" />
-        </button>
+        <StoreSwitcher />
       </header>
 
       <div className="px-5">
