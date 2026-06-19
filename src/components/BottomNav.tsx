@@ -27,7 +27,7 @@ const ITEMS: NavItem[] = [
   { label: "Offers", icon: Tag },
   { label: "Shopping List", icon: ListChecks },
   { label: "Leaflet", icon: Newspaper },
-  { label: "Chatbot", icon: ChatCircleDots, href: "/chatbot", isNew: true },
+  { label: "AldiChef", icon: ChatCircleDots, href: "/chatbot", isNew: true },
 ];
 
 export function BottomNav() {

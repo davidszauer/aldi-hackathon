@@ -113,14 +113,14 @@ export function ChatScreen() {
   const showSuggestions = messages.length === 1;
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-app-hairline flex items-center gap-3 border-b px-5 py-3.5">
+      <div className="border-app-hairline flex shrink-0 items-center gap-3 border-b px-5 py-3.5">
         <span className="bg-aldi-blue/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
           <Sparkle size={22} weight="fill" className="text-aldi-blue" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="text-aldi-navy block text-[16px] font-bold">Recipe Assistant</span>
+          <span className="text-aldi-navy block text-[16px] font-bold">AldiChef</span>
           <span className="text-app-muted block text-[12px] font-medium">
             Dish to basket, the ALDI way
           </span>
@@ -129,7 +129,7 @@ export function ChatScreen() {
       </div>
 
       {/* Conversation */}
-      <div ref={scrollerRef} className="flex-1 space-y-4 px-4 py-5">
+      <div ref={scrollerRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5">
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
@@ -182,7 +182,7 @@ export function ChatScreen() {
       </div>
 
       {/* Composer */}
-      <div className="border-app-hairline border-t px-4 py-3">
+      <div className="border-app-hairline shrink-0 border-t px-4 py-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
