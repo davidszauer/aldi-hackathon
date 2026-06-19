@@ -1,15 +1,7 @@
 // OpenAI tool definitions + dispatcher that maps them to the ALDI API client.
 
 import type OpenAI from "openai";
-import {
-  getRecipe,
-  getRecipes,
-  getRoutePlan,
-  getStoreGrid,
-  getStores,
-  type ProductOption,
-  type RecipeDetail,
-} from "@/lib/api";
+import { getRecipe, getRecipes, type ProductOption, type RecipeDetail } from "@/lib/api";
 import type { ChatArtifacts } from "./types";
 
 export const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -18,11 +10,11 @@ export const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: "search_recipes",
       description:
-        "Search ALDI recipes by dish name or ingredient (e.g. 'pasta', 'chicken'). Returns matching recipe options.",
+        "Search ALDI recipes by dish name, cuisine, or ingredient (e.g. 'pasta', 'salad', 'chicken'). Returns matching recipe options that the app renders as selectable cards.",
       parameters: {
         type: "object",
         properties: {
-          query: { type: "string", description: "Dish or ingredient to search for." },
+          query: { type: "string", description: "Dish, cuisine, or ingredient to search for." },
         },
         required: ["query"],
       },
@@ -33,49 +25,21 @@ export const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: "get_recipe",
       description:
-        "Get a recipe's full ingredient list resolved to ALDI products (sizes, prices, margins), scaled to the requested portions. Use after the customer picks a recipe.",
+        "Resolve a recipe's ingredients to ALDI products (sizes, prices, margins), scaled to the requested portions, and open the interactive shopping basket. Only needed when the customer asks for a recipe's basket in words before a card exists.",
       parameters: {
         type: "object",
         properties: {
           recipe_id: { type: "integer", description: "The recipe id to resolve." },
           portions: {
             type: "integer",
-            description: "How many portions to scale the recipe to. Defaults to the recipe base.",
+            description: "How many portions to scale to. Defaults to the recipe base.",
           },
           exclude_pantry: {
             type: "boolean",
-            description: "Skip pantry staples (salt, oil, pepper, ...) from the shopping list.",
+            description: "Skip pantry staples (salt, oil, pepper, ...) from the basket.",
           },
         },
         required: ["recipe_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "list_stores",
-      description: "List the ALDI stores the customer can choose from.",
-      parameters: { type: "object", properties: {} },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "plan_route",
-      description:
-        "Plan the shortest route through a store that collects every ingredient for a recipe and ends at the checkout. Use after a recipe and a store are chosen.",
-      parameters: {
-        type: "object",
-        properties: {
-          store_id: { type: "integer", description: "The store id to shop at." },
-          recipe_id: { type: "integer", description: "The recipe id to shop for." },
-          exclude_pantry: {
-            type: "boolean",
-            description: "Skip pantry staples (keep this consistent with get_recipe).",
-          },
-        },
-        required: ["store_id", "recipe_id"],
       },
     },
   },
@@ -106,9 +70,7 @@ function summarizeRecipe(detail: RecipeDetail) {
       unit: ing.unit,
       pantry_staple: ing.pantry_staple,
       in_shopping_list: ing.include_in_shopping_list,
-      recommended_product: opt
-        ? { name: opt.name, size: opt.size, price: opt.line_price }
-        : null,
+      recommended_product: opt ? { name: opt.name, size: opt.size, price: opt.line_price } : null,
       option_count: ing.product_options.length,
     };
   });
@@ -152,32 +114,6 @@ export async function runTool(name: string, args: Record<string, unknown>): Prom
         exclude_pantry: args.exclude_pantry === true,
       });
       return { content: JSON.stringify(summarizeRecipe(detail)), artifacts: { recipe: detail } };
-    }
-
-    case "list_stores": {
-      const stores = await getStores();
-      const content = JSON.stringify({
-        stores: stores.map((s) => ({ id: s.id, name: s.name, city: s.city })),
-      });
-      return { content, artifacts: { stores } };
-    }
-
-    case "plan_route": {
-      const storeId = Number(args.store_id);
-      const [plan, grid] = await Promise.all([
-        getRoutePlan(storeId, {
-          recipe_id: Number(args.recipe_id),
-          exclude_pantry: args.exclude_pantry === true,
-        }),
-        getStoreGrid(storeId),
-      ]);
-      const content = JSON.stringify({
-        store: plan.store_name,
-        total_steps: plan.total_steps,
-        stops: plan.stops.map((s) => ({ order: s.order, label: s.label })),
-        unavailable_category_ids: plan.unavailable_category_ids,
-      });
-      return { content, artifacts: { route: { plan, grid } } };
     }
 
     default:
